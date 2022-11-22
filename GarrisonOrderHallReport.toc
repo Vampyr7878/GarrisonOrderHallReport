@@ -1,0 +1,8 @@
+## Interface: 100002
+## Title: Garrison and Order Hall Report
+## Notes: Allows you to see older Garrison Reports on Right or Middle Click.
+## Author: Vampyr78
+## Version: 2.8
+## SavedVariables: GarrisonOrderHallReportButton
+## SavedVariablesPerCharacter: GarrisonOrderHallReportGarrison
+GarrisonOrderHallReport.lua
