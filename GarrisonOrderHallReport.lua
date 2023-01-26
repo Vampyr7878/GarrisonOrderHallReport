@@ -127,7 +127,7 @@ function GarrisonReportDropDownOnLoad()
 	if not not (C_Garrison.GetGarrisonInfo(9)) then
 		UIDropDownMenu_AddButton(missions)
 	end
-	if GarrisonOrderHallReportCovenant > 0 then
+	if GarrisonOrderHallReportCovenant ~= nil and GarrisonOrderHallReportCovenant > 0 then
 		UIDropDownMenu_AddButton(covenant)
 	end
 	if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) then
