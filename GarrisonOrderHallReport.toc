@@ -1,8 +1,8 @@
-## Interface: 100100
+## Interface: 100105
 ## Title: Garrison and Order Hall Report
 ## Notes: Allows you to see older Garrison Reports on Right or Middle Click.
 ## Author: Vampyr78
-## Version: 2.9
+## Version: 3.0
 ## SavedVariables: GarrisonOrderHallReportButton
 ## SavedVariablesPerCharacter: GarrisonOrderHallReportGarrison
 ## IconTexture: Interface\Icons\inv_icon_mission_complete_order.blp
