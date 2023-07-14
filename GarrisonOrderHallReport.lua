@@ -82,6 +82,7 @@ function GarrisonOrderHallReportFrameOnEvent(self, event, arg1)
 		ExpansionLandingPageMinimapButton:SetScript("OnEnter", function() end)
 		GarrisonReportDropDown = CreateFrame("FRAME", "GarrisonReportDropDown", UIParent, "UIDropDownMenuTemplate")
 		UIDropDownMenu_Initialize(GarrisonReportDropDown, GarrisonReportDropDownOnLoad, "MENU")
+		GarrisonOrderHallReportSetButtonLook()
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 	local show = false
@@ -244,6 +245,109 @@ function GarrisonOrderHallReportOptionsOkay()
 	elseif GarrisonOrderHallReportGarrisons[5]:GetChecked() then
 		GarrisonOrderHallReportGarrison = "df"
 	end
+	GarrisonOrderHallReportSetButtonLook()
+end
+
+function GarrisonOrderHallReportSetButtonLook()
+	ExpansionLandingPageMinimapButton.garrisonType = GarrisonOrderHallReportGarrison
+	GarrisonOrderHallReportApplyAnchor(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportGarrison)
+	if (GarrisonOrderHallReportGarrison == 2) then
+		ExpansionLandingPageMinimapButton.faction = UnitFactionGroup("player")
+		if ( ExpansionLandingPageMinimapButton.faction == "Horde" ) then
+			ExpansionLandingPageMinimapButton:GetNormalTexture():SetAtlas("GarrLanding-MinimapIcon-Horde-Up", true)
+			ExpansionLandingPageMinimapButton:GetPushedTexture():SetAtlas("GarrLanding-MinimapIcon-Horde-Down", true)
+		else
+			ExpansionLandingPageMinimapButton:GetNormalTexture():SetAtlas("GarrLanding-MinimapIcon-Alliance-Up", true)
+			ExpansionLandingPageMinimapButton:GetPushedTexture():SetAtlas("GarrLanding-MinimapIcon-Alliance-Down", true)
+		end
+		ExpansionLandingPageMinimapButton.title = GARRISON_LANDING_PAGE_TITLE
+		ExpansionLandingPageMinimapButton.description = MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP
+	elseif (GarrisonOrderHallReportGarrison == 3) then
+		local _, className = UnitClass("player");
+		ExpansionLandingPageMinimapButton:GetNormalTexture():SetAtlas("legionmission-landingbutton-"..className.."-up", true)
+		ExpansionLandingPageMinimapButton:GetPushedTexture():SetAtlas("legionmission-landingbutton-"..className.."-down", true)
+		ExpansionLandingPageMinimapButton.title = ORDER_HALL_LANDING_PAGE_TITLE
+		ExpansionLandingPageMinimapButton.description = MINIMAP_ORDER_HALL_LANDING_PAGE_TOOLTIP
+	elseif (GarrisonOrderHallReportGarrison == 9) then
+		ExpansionLandingPageMinimapButton.faction = UnitFactionGroup("player")
+		GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportBfaAtlas(ExpansionLandingPageMinimapButton.faction))
+		ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_8_0_LANDING_PAGE_TITLE
+		ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_8_0_LANDING_PAGE_TOOLTIP
+	elseif (GarrisonOrderHallReportGarrison == 111) then
+		local covenantData = C_Covenants.GetCovenantData(C_Covenants.GetActiveCovenantID())
+		if covenantData then
+			GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportSlAtlas(covenantData));
+			ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_9_0_LANDING_PAGE_TITLE
+			ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_9_0_LANDING_PAGE_TOOLTIP
+		else
+			GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportDfAtlas());
+			ExpansionLandingPageMinimapButton.title = DRAGONFLIGHT_LANDING_PAGE_TITLE
+			ExpansionLandingPageMinimapButton.description = DRAGONFLIGHT_LANDING_PAGE_TOOLTIP
+		end
+	elseif (GarrisonOrderHallReportGarrison == "df") then
+		GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportDfAtlas());
+		ExpansionLandingPageMinimapButton.title = DRAGONFLIGHT_LANDING_PAGE_TITLE
+		ExpansionLandingPageMinimapButton.description = DRAGONFLIGHT_LANDING_PAGE_TOOLTIP
+	end
+end
+
+function GarrisonOrderHallReportBfaAtlas(faction)
+	if faction == "Horde" then
+		return "bfa-landingbutton-horde-up", "bfa-landingbutton-horde-down", "bfa-landingbutton-horde-diamondhighlight", "bfa-landingbutton-horde-diamondglow"
+	else
+		return "bfa-landingbutton-alliance-up", "bfa-landingbutton-alliance-down", "bfa-landingbutton-alliance-shieldhighlight", "bfa-landingbutton-alliance-shieldglow"
+	end
+end
+
+local garrisonTypeAnchors = {
+	["default"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", 5, -162),
+	[111] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150),
+}
+
+function GarrisonOrderHallReportGetAnchor(garrisonType)
+	return garrisonTypeAnchors[garrisonType or "default"] or garrisonTypeAnchors["default"];
+end
+
+function GarrisonOrderHallReportApplyAnchor(self, garrisonType)
+	local anchor = GarrisonOrderHallReportGetAnchor(garrisonType);
+	local clearAllPoints = true
+	anchor:SetPoint(self, clearAllPoints)
+end
+
+local garrisonType9_0AtlasFormats = {"shadowlands-landingbutton-%s-up",
+									 "shadowlands-landingbutton-%s-down",
+									 "shadowlands-landingbutton-%s-highlight",
+									 "shadowlands-landingbutton-%s-glow"};
+
+function GarrisonOrderHallReportSlAtlas(covenantData)
+	local kit = covenantData and covenantData.textureKit or "kyrian"
+	if kit then
+		local t = garrisonType9_0AtlasFormats
+		return t[1]:format(kit), t[2]:format(kit), t[3]:format(kit), t[4]:format(kit)
+	end
+end
+
+function GarrisonOrderHallReportDfAtlas()
+	return "dragonflight-landingbutton-up", "dragonflight-landingbutton-down", "dragonflight-landingbutton-circlehighlight", "dragonflight-landingbutton-circleglow", true
+end
+
+function GarrisonOrderHallReportIconFromAtlas(self, up, down, highlight, glow, useDefaultButtonSize)
+	local width, height
+	if useDefaultButtonSize then
+		width = self.defaultWidth
+		height = self.defaultHeight
+		self.LoopingGlow:SetSize(self.defaultGlowWidth, self.defaultGlowHeight)
+	else
+		local info = C_Texture.GetAtlasInfo(up)
+		width = info and info.width or 0
+		height = info and info.height or 0
+	end
+	self:SetSize(width, height)
+	local useAtlasSize = not useDefaultButtonSize
+	self:GetNormalTexture():SetAtlas(up, useAtlasSize)
+	self:GetPushedTexture():SetAtlas(down, useAtlasSize)
+	self:GetHighlightTexture():SetAtlas(highlight, useAtlasSize)
+	self.LoopingGlow:SetAtlas(glow, useAtlasSize)
 end
 
 local GarrisonOrderHallReportFrame = CreateFrame("FRAME", nil, UIParent)
