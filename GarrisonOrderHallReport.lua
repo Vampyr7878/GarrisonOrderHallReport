@@ -310,9 +310,11 @@ function GarrisonOrderHallReportGetAnchor(garrisonType)
 end
 
 function GarrisonOrderHallReportApplyAnchor(self, garrisonType)
-	local anchor = GarrisonOrderHallReportGetAnchor(garrisonType);
-	local clearAllPoints = true
-	anchor:SetPoint(self, clearAllPoints)
+	if garrisonType ~= nil then
+		local anchor = GarrisonOrderHallReportGetAnchor(garrisonType);
+		local clearAllPoints = true
+		anchor:SetPoint(self, clearAllPoints)
+	end
 end
 
 local garrisonType9_0AtlasFormats = {"shadowlands-landingbutton-%s-up",
