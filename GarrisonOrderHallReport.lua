@@ -1,19 +1,21 @@
-local GarrisonOrderHallReportButtons = {}
-local GarrisonOrderHallReportGarrisons = {}
-local GarrisonOrderHallReportCovenant
-GarrisonOrderHallReportGarrison = nil
+local GarrisonOrderHallReport = LibStub("AceAddon-3.0"):NewAddon("GarrisonOrderHallReport")
 
-function GarrisonOrderHallReportFixFrame()
+GarrisonOrderHallReport.Buttons = {}
+GarrisonOrderHallReport.Garrisons = {}
+GarrisonOrderHallReport.Covenant = 0
+GarrisonOrderHallReport.Overlays = {}
+
+function GarrisonOrderHallReport:FixFrame()
 	if GarrisonLandingPage.garrTypeID == 111 then
 		GarrisonLandingPage.Report.Sections:Show()
-	elseif GarrisonOrderHallReportCovenant > 0 then
+	elseif self.Covenant > 0 then
 		GarrisonLandingPage.Report.Sections:Hide()
 		GarrisonLandingPage.FollowerTabButton:SetText("Followers")
 	end
 end
 
 ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, down)
-	GarrisonOrderHallReportCovenant = C_Covenants.GetActiveCovenantID()
+	GarrisonOrderHallReport.Covenant = C_Covenants.GetActiveCovenantID()
 	if button == GarrisonOrderHallReportButton then
 		if GarrisonLandingPage ~= nil then
 			HideUIPanel(GarrisonLandingPage)
@@ -21,22 +23,27 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 		if ExpansionLandingPage ~= nil then
 			HideUIPanel(ExpansionLandingPage)
 		end
-		ToggleDropDownMenu(1, nil, GarrisonReportDropDown, self, 0, 0)
+		GarrisonOrderHallReport:ContextMenu(self)
 	elseif button == "LeftButton" then
 		if GarrisonOrderHallReportGarrison == nil then
-			if UnitLevel("PLAYER") >= 60 then
+			if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) or C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10) then
+				ExpansionLandingPage:RefreshExpansionOverlay()
 				ToggleExpansionLandingPage()
 			else
 				GarrisonLandingPage_Toggle()
-				GarrisonOrderHallReportFixFrame()
-				SetupFollowerTab()
+				GarrisonOrderHallReport:FixFrame()
+				GarrisonOrderHallReport:SetupFollowerTab()
 			end
 		else
-			if GarrisonOrderHallReportGarrison == "df" then
+			if not tonumber(GarrisonOrderHallReportGarrison) then
 				if GarrisonLandingPage ~= nil then
 					HideUIPanel(GarrisonLandingPage)
 				end
 				ToggleExpansionLandingPage()
+				ExpansionLandingPage.overlayFrame:Hide();
+				ExpansionLandingPage.overlay = GarrisonOrderHallReport.Overlays[GarrisonOrderHallReportGarrison]
+				ExpansionLandingPage.overlayFrame = ExpansionLandingPage.overlay.CreateOverlay(ExpansionLandingPage.Overlay);
+				ExpansionLandingPage.overlayFrame:Show();
 			else
 				if ExpansionLandingPage ~= nil then
 					HideUIPanel(ExpansionLandingPage)
@@ -44,11 +51,11 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 				if GarrisonLandingPage ~= nil and GarrisonLandingPage:IsShown() then
 					HideUIPanel(GarrisonLandingPage)
 				else
-					if (GarrisonOrderHallReportGarrison == 111 and GarrisonOrderHallReportCovenant > 0) or GarrisonOrderHallReportGarrison ~= 111 then
+					if (GarrisonOrderHallReportGarrison == 111 and GarrisonOrderHallReport.Covenant > 0) or GarrisonOrderHallReportGarrison ~= 111 then
 						if not not (C_Garrison.GetGarrisonInfo(GarrisonOrderHallReportGarrison)) then
 							ShowGarrisonLandingPage(GarrisonOrderHallReportGarrison)
-							GarrisonOrderHallReportFixFrame()
-							SetupFollowerTab()
+							GarrisonOrderHallReport:FixFrame()
+							GarrisonOrderHallReport:SetupFollowerTab()
 						end
 					end
 				end
@@ -57,7 +64,7 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 	end
 end)
 
-function SetupFollowerTab()
+function GarrisonOrderHallReport:SetupFollowerTab()
 	GarrisonLandingPage.FollowerTab:SetScript("OnShow", function(self)
 		if GarrisonLandingPage.garrTypeID ~= 111 then
 			GarrisonLandingPage.FollowerList:Show()
@@ -71,186 +78,67 @@ function SetupFollowerTab()
 	end)
 end
 
-function GarrisonOrderHallReportFrameOnEvent(self, event, arg1)
-	if event == "ADDON_LOADED" and arg1 == "GarrisonOrderHallReport" then
-		if GarrisonOrderHallReportButton == nil then
-			GarrisonOrderHallReportButton = "RightButton"
-		end
-	elseif event == "PLAYER_LOGIN" then
-		GarrisonOrderHallReportCovenant = C_Covenants.GetActiveCovenantID()
-		ExpansionLandingPageMinimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
-		ExpansionLandingPageMinimapButton:SetScript("OnEnter", function() end)
-		GarrisonReportDropDown = CreateFrame("FRAME", "GarrisonReportDropDown", UIParent, "UIDropDownMenuTemplate")
-		UIDropDownMenu_Initialize(GarrisonReportDropDown, GarrisonReportDropDownOnLoad, "MENU")
-		GarrisonOrderHallReportSetButtonLook()
-		self:UnregisterEvent("ADDON_LOADED")
-	end
+function GarrisonOrderHallReport:FrameOnEvent()
 	local show = false
-	local garrisons = { 2, 3, 9, 111 }
+	local garrisons = { 2, 3, 9 }
 	for i = 1, table.getn(garrisons) do
 		local available = not not (C_Garrison.GetGarrisonInfo(garrisons[i]))
 		show = available or show
+	end
+	if GarrisonOrderHallReport.Covenant ~= nil and GarrisonOrderHallReport.Covenant > 0 then
+		show = true
 	end
 	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9)
 	show = available or show
 	if show then
 		ExpansionLandingPageMinimapButton:Show()
 	end
+	GarrisonOrderHallReport:SetButtonLook()
 end
 
-function GarrisonReportDropDownOnLoad()
-	local garrison = {}
-	garrison.text = "Garrison"
-	garrison.value = 2
-	garrison.func = GarrisonReportDropDownOnClick
-	local order = {}
-	order.text = "Order Hall"
-	order.value = 3
-	order.func = GarrisonReportDropDownOnClick
-	local missions = {}
-	missions.text = "Missions"
-	missions.value = 9
-	missions.func = GarrisonReportDropDownOnClick
-	local covenant = {}
-	covenant.text = "Covenant Sanctum"
-	covenant.value = 111
-	covenant.func = GarrisonReportDropDownOnClick
-	local dragon = {}
-	dragon.text = "Dragon Isles"
-	dragon.value = "df"
-	dragon.func = GarrisonReportDropDownOnClick
-	if not not (C_Garrison.GetGarrisonInfo(2)) then
-		UIDropDownMenu_AddButton(garrison)
-	end
-	if not not (C_Garrison.GetGarrisonInfo(3)) then
-		UIDropDownMenu_AddButton(order)
-	end
-	if not not (C_Garrison.GetGarrisonInfo(9)) then
-		UIDropDownMenu_AddButton(missions)
-	end
-	if GarrisonOrderHallReportCovenant ~= nil and GarrisonOrderHallReportCovenant > 0 then
-		UIDropDownMenu_AddButton(covenant)
-	end
-	if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) then
-		UIDropDownMenu_AddButton(dragon)
-	end
+function GarrisonOrderHallReport:ContextMenu(parent)
+	MenuUtil.CreateContextMenu(parent, function(owner, root)
+		if not not (C_Garrison.GetGarrisonInfo(2)) then
+			root:CreateButton("Garrison", function() self:ContextMenuClick(2) end)
+		end
+		if not not (C_Garrison.GetGarrisonInfo(3)) then
+			root:CreateButton("Order Hall", function() self:ContextMenuClick(3) end)
+		end
+		if not not (C_Garrison.GetGarrisonInfo(9)) then
+			root:CreateButton("Missions", function() self:ContextMenuClick(9) end)
+		end
+		if self.Covenant ~= nil and self.Covenant > 0 then
+			root:CreateButton("Covenant Sanctum", function() self:ContextMenuClick(111) end)
+		end
+		if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) then
+			root:CreateButton("Dragon Isles", function() self:ContextMenuClick("df") end)
+		end
+		if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10) then
+			root:CreateButton("Khaz Algar", function() self:ContextMenuClick("tww") end)
+		end
+	end)
 end
 
-function GarrisonReportDropDownOnClick(value)
-	if value.value == 111 and GarrisonOrderHallReportCovenant == 0 then
+function GarrisonOrderHallReport:ContextMenuClick(value)
+	if value == 111 and self.Covenant == 0 then
 		return
 	end
-	if value.value == "df" then
+	if tonumber(value) then
+		ShowGarrisonLandingPage(value)
+		self:FixFrame()
+		self:SetupFollowerTab()
+	else
 		ToggleExpansionLandingPage()
-	else
-		ShowGarrisonLandingPage(value.value)
-		GarrisonOrderHallReportFixFrame()
-		SetupFollowerTab()
+		ExpansionLandingPage.overlayFrame:Hide();
+		ExpansionLandingPage.overlay = self.Overlays[value]
+		ExpansionLandingPage.overlayFrame = ExpansionLandingPage.overlay.CreateOverlay(ExpansionLandingPage.Overlay);
+		ExpansionLandingPage.overlayFrame:Show();
 	end
 end
 
-function GarrisonOrderHallReportRadioButtonClick(self)
-	for i = 1, table.getn(GarrisonOrderHallReportButtons) do
-		GarrisonOrderHallReportButtons[i]:SetChecked(false)
-	end
-	self:SetChecked(true)
-end
-
-function GarrisonOrderHallReportRadioGarrisonClick(self)
-	for i = 1, table.getn(GarrisonOrderHallReportGarrisons) do
-		GarrisonOrderHallReportGarrisons[i]:SetChecked(false)
-	end
-	self:SetChecked(true)
-end
-
-function GarrisonOrderHallReportRadioButton(text, parent, x, y)
-	local button = CreateFrame("CheckButton", nil, parent, "UIRadioButtonTemplate")
-	local font = button:CreateFontString(nil, nil, "GameFontNormal")
-	font:SetText(text)
-	font:SetPoint("LEFT", x, 0)
-	button:SetFontString(font)
-	button:SetPoint("TOPLEFT", x, y)
-	button:Show()
-	button:SetScript("OnClick", GarrisonOrderHallReportRadioButtonClick)
-	table.insert(GarrisonOrderHallReportButtons, button)
-end
-
-function GarrisonOrderHallReportRadioGarrison(text, parent, x, y)
-	local button = CreateFrame("CheckButton", nil, parent, "UIRadioButtonTemplate")
-	local font = button:CreateFontString(nil, nil, "GameFontNormal")
-	font:SetText(text)
-	font:SetPoint("LEFT", x, 0)
-	button:SetFontString(font)
-	button:SetPoint("TOPLEFT", x, y)
-	button:Show()
-	button:SetScript("OnClick", GarrisonOrderHallReportRadioGarrisonClick)
-	table.insert(GarrisonOrderHallReportGarrisons, button)
-end
-
-function GarrisonOrderHallReportOptionsRefresh()
-	if GarrisonOrderHallReportButton == "RightButton" then
-		GarrisonOrderHallReportButtons[1]:SetChecked(true)
-		GarrisonOrderHallReportButtons[2]:SetChecked(false)
-	else
-		GarrisonOrderHallReportButtons[1]:SetChecked(false)
-		GarrisonOrderHallReportButtons[2]:SetChecked(true)
-	end
-	if GarrisonOrderHallReportGarrison == 2 then
-		GarrisonOrderHallReportGarrisons[1]:SetChecked(true)
-		GarrisonOrderHallReportGarrisons[2]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[3]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[4]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[5]:SetChecked(false)
-	elseif GarrisonOrderHallReportGarrison == 3 then
-		GarrisonOrderHallReportGarrisons[1]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[2]:SetChecked(true)
-		GarrisonOrderHallReportGarrisons[3]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[4]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[5]:SetChecked(false)
-	elseif GarrisonOrderHallReportGarrison == 9 then
-		GarrisonOrderHallReportGarrisons[1]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[2]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[3]:SetChecked(true)
-		GarrisonOrderHallReportGarrisons[4]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[5]:SetChecked(false)
-	elseif GarrisonOrderHallReportGarrison == 111 then
-		GarrisonOrderHallReportGarrisons[1]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[2]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[3]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[4]:SetChecked(true)
-		GarrisonOrderHallReportGarrisons[5]:SetChecked(false)
-	elseif GarrisonOrderHallReportGarrison == "df" then
-		GarrisonOrderHallReportGarrisons[1]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[2]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[3]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[4]:SetChecked(false)
-		GarrisonOrderHallReportGarrisons[5]:SetChecked(true)
-	end
-end
-
-function GarrisonOrderHallReportOptionsOkay()
-	if GarrisonOrderHallReportButtons[1]:GetChecked() then
-		GarrisonOrderHallReportButton = "RightButton"
-	else
-		GarrisonOrderHallReportButton = "MiddleButton"
-	end
-	if GarrisonOrderHallReportGarrisons[1]:GetChecked() then
-		GarrisonOrderHallReportGarrison = 2
-	elseif GarrisonOrderHallReportGarrisons[2]:GetChecked() then
-		GarrisonOrderHallReportGarrison = 3
-	elseif GarrisonOrderHallReportGarrisons[3]:GetChecked() then
-		GarrisonOrderHallReportGarrison = 9
-	elseif GarrisonOrderHallReportGarrisons[4]:GetChecked() then
-		GarrisonOrderHallReportGarrison = 111
-	elseif GarrisonOrderHallReportGarrisons[5]:GetChecked() then
-		GarrisonOrderHallReportGarrison = "df"
-	end
-	GarrisonOrderHallReportSetButtonLook()
-end
-
-function GarrisonOrderHallReportSetButtonLook()
+function GarrisonOrderHallReport:SetButtonLook()
 	ExpansionLandingPageMinimapButton.garrisonType = GarrisonOrderHallReportGarrison
-	GarrisonOrderHallReportApplyAnchor(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportGarrison)
+	self:ApplyAnchor(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportGarrison)
 	if (GarrisonOrderHallReportGarrison == 2) then
 		ExpansionLandingPageMinimapButton.faction = UnitFactionGroup("player")
 		if ( ExpansionLandingPageMinimapButton.faction == "Horde" ) then
@@ -270,28 +158,32 @@ function GarrisonOrderHallReportSetButtonLook()
 		ExpansionLandingPageMinimapButton.description = MINIMAP_ORDER_HALL_LANDING_PAGE_TOOLTIP
 	elseif (GarrisonOrderHallReportGarrison == 9) then
 		ExpansionLandingPageMinimapButton.faction = UnitFactionGroup("player")
-		GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportBfaAtlas(ExpansionLandingPageMinimapButton.faction))
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:BfaAtlas(ExpansionLandingPageMinimapButton.faction))
 		ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_8_0_LANDING_PAGE_TITLE
 		ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_8_0_LANDING_PAGE_TOOLTIP
 	elseif (GarrisonOrderHallReportGarrison == 111) then
 		local covenantData = C_Covenants.GetCovenantData(C_Covenants.GetActiveCovenantID())
 		if covenantData then
-			GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportSlAtlas(covenantData));
+			self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:SlAtlas(covenantData));
 			ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_9_0_LANDING_PAGE_TITLE
 			ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_9_0_LANDING_PAGE_TOOLTIP
 		else
-			GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportDfAtlas());
-			ExpansionLandingPageMinimapButton.title = DRAGONFLIGHT_LANDING_PAGE_TITLE
-			ExpansionLandingPageMinimapButton.description = DRAGONFLIGHT_LANDING_PAGE_TOOLTIP
+			self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:TwwAtlas());
+			ExpansionLandingPageMinimapButton.title = WARIWTHIN_LANDING_PAGE_TITLE
+			ExpansionLandingPageMinimapButton.description = WARIWTHIN_LANDING_PAGE_TOOLTIP
 		end
 	elseif (GarrisonOrderHallReportGarrison == "df") then
-		GarrisonOrderHallReportIconFromAtlas(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportDfAtlas());
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:DfAtlas());
 		ExpansionLandingPageMinimapButton.title = DRAGONFLIGHT_LANDING_PAGE_TITLE
 		ExpansionLandingPageMinimapButton.description = DRAGONFLIGHT_LANDING_PAGE_TOOLTIP
+	elseif (GarrisonOrderHallReportGarrison == "tww") then
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:TwwAtlas());
+		ExpansionLandingPageMinimapButton.title = WARIWTHIN_LANDING_PAGE_TITLE
+		ExpansionLandingPageMinimapButton.description = WARIWTHIN_LANDING_PAGE_TOOLTIP
 	end
 end
 
-function GarrisonOrderHallReportBfaAtlas(faction)
+function GarrisonOrderHallReport:BfaAtlas(faction)
 	if faction == "Horde" then
 		return "bfa-landingbutton-horde-up", "bfa-landingbutton-horde-down", "bfa-landingbutton-horde-diamondhighlight", "bfa-landingbutton-horde-diamondglow"
 	else
@@ -302,16 +194,17 @@ end
 local garrisonTypeAnchors = {
 	["default"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", 5, -162),
 	[111] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150),
-	["df"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150)
+	["df"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150),
+	["tww"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -12, -152)
 }
 
-function GarrisonOrderHallReportGetAnchor(garrisonType)
+function GarrisonOrderHallReport:GetAnchor(garrisonType)
 	return garrisonTypeAnchors[garrisonType or "default"] or garrisonTypeAnchors["default"];
 end
 
-function GarrisonOrderHallReportApplyAnchor(self, garrisonType)
+function GarrisonOrderHallReport:ApplyAnchor(self, garrisonType)
 	if garrisonType ~= nil then
-		local anchor = GarrisonOrderHallReportGetAnchor(garrisonType);
+		local anchor = GarrisonOrderHallReport:GetAnchor(garrisonType);
 		local clearAllPoints = true
 		anchor:SetPoint(self, clearAllPoints)
 	end
@@ -322,7 +215,7 @@ local garrisonType9_0AtlasFormats = {"shadowlands-landingbutton-%s-up",
 									 "shadowlands-landingbutton-%s-highlight",
 									 "shadowlands-landingbutton-%s-glow"};
 
-function GarrisonOrderHallReportSlAtlas(covenantData)
+function GarrisonOrderHallReport:SlAtlas(covenantData)
 	local kit = covenantData and covenantData.textureKit or "kyrian"
 	if kit then
 		local t = garrisonType9_0AtlasFormats
@@ -330,11 +223,15 @@ function GarrisonOrderHallReportSlAtlas(covenantData)
 	end
 end
 
-function GarrisonOrderHallReportDfAtlas()
+function GarrisonOrderHallReport:DfAtlas()
 	return "dragonflight-landingbutton-up", "dragonflight-landingbutton-down", "dragonflight-landingbutton-circlehighlight", "dragonflight-landingbutton-circleglow", true
 end
 
-function GarrisonOrderHallReportIconFromAtlas(self, up, down, highlight, glow, useDefaultButtonSize)
+function GarrisonOrderHallReport:TwwAtlas()
+	return "warwithin-landingbutton-up", "warwithin-landingbutton-down", "warwithin-landingbutton-circlehighlight", "warwithin-landingbutton-circleglow", true
+end
+
+function GarrisonOrderHallReport:IconFromAtlas(self, up, down, highlight, glow, useDefaultButtonSize)
 	local width, height
 	if useDefaultButtonSize then
 		width = self.defaultWidth
@@ -353,26 +250,88 @@ function GarrisonOrderHallReportIconFromAtlas(self, up, down, highlight, glow, u
 	self.LoopingGlow:SetAtlas(glow, useAtlasSize)
 end
 
-local GarrisonOrderHallReportFrame = CreateFrame("FRAME", nil, UIParent)
-GarrisonOrderHallReportFrame:RegisterEvent("ADDON_LOADED")
-GarrisonOrderHallReportFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-GarrisonOrderHallReportFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
-GarrisonOrderHallReportFrame:RegisterEvent("ZONE_CHANGED")
-GarrisonOrderHallReportFrame:RegisterEvent("ZONE_CHANGED_INDOORS")
-GarrisonOrderHallReportFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-GarrisonOrderHallReportFrame:RegisterEvent("PLAYER_LOGIN")
-GarrisonOrderHallReportFrame:SetScript("OnEvent", GarrisonOrderHallReportFrameOnEvent)
+function GarrisonOrderHallReport:OnInitialize()
+	self.frame = CreateFrame("FRAME", nil, UIParent)
+	self.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	self.frame:RegisterEvent("PLAYER_UPDATE_RESTING")
+	self.frame:RegisterEvent("ZONE_CHANGED")
+	self.frame:RegisterEvent("ZONE_CHANGED_INDOORS")
+	self.frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	self.frame:RegisterEvent("PLAYER_LOGIN")
+	self.frame:SetScript("OnEvent", self.FrameOnEvent)
+	if GarrisonOrderHallReportButton == nil then
+		GarrisonOrderHallReportButton = "RightButton"
+	end
+	self.Covenant = C_Covenants.GetActiveCovenantID()
+	ExpansionLandingPageMinimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
+	ExpansionLandingPageMinimapButton:SetScript("OnEnter", function() end)
+	local show = false
+	local garrisons = { 2, 3, 9, 111 }
+	for i = 1, table.getn(garrisons) do
+		local available = not not (C_Garrison.GetGarrisonInfo(garrisons[i]))
+		show = available or show
+	end
+	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) or C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10)
+	show = available or show
+	if show then
+		ExpansionLandingPageMinimapButton:Show()
+	end
+	GarrisonOrderHallReport.Overlays = {
+		["df"] = CreateFromMixins(DragonflightLandingOverlayMixin),
+		["tww"] = CreateFromMixins(WarWithinLandingOverlayMixin)
+	}
+	local options = {
+		name = "Garrison Order Hall Report",
+		handler = GarrisonOrderHallReport,
+		type = "group",
+		args = {
+			button = {
+				name = "Mouse Button",
+				type = "select",
+				desc = "select mouse button that opens dropdown menu",
+				values = {
+					["RightButton"] = "Right Mouse Button",
+					["MiddleButton"] = "Middle Mouse Button"
+				},
+				set = "SetButton",
+				get = "GetButton",
+				style = "radio"
+			},
+			garrison = {
+				name = "Report Type",
+				type = "select",
+				desc = "select report type that will be available as your default under left mouse button",
+				values = {
+					[2] = "Garrison",
+					[3] = "Order Hall",
+					[9] = "Missions",
+					[111] = "Covenant Sanctum",
+					["df"] = "Dragon Isles",
+					["tww"] = "Khaz Algar",
+				},
+				set = "SetGarrison",
+				get = "GetGarrison",
+				style = "radio"
+			}
+		}
+	}
+	LibStub("AceConfig-3.0"):RegisterOptionsTable("GarrisonOrderHallReport", options, nil)
+	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("GarrisonOrderHallReport", "Garrison Order Hall Report")
+end
 
-local GarrisonOrderHallReportOptions = CreateFrame("FRAME")
-GarrisonOrderHallReportOptions.name = "Garrison Order Hall Report"
-GarrisonOrderHallReportRadioButton("Right Mouse Button", GarrisonOrderHallReportOptions, 20, -20)
-GarrisonOrderHallReportRadioButton("Middle Mouse Button", GarrisonOrderHallReportOptions, 20, -40)
-GarrisonOrderHallReportRadioGarrison("Garrison", GarrisonOrderHallReportOptions, 20, -100)
-GarrisonOrderHallReportRadioGarrison("Order Hall", GarrisonOrderHallReportOptions, 20, -120)
-GarrisonOrderHallReportRadioGarrison("Missions", GarrisonOrderHallReportOptions, 20, -140)
-GarrisonOrderHallReportRadioGarrison("Covenant Sanctum", GarrisonOrderHallReportOptions, 20, -160)
-GarrisonOrderHallReportRadioGarrison("Dragon Isles", GarrisonOrderHallReportOptions, 20, -180)
-GarrisonOrderHallReportOptions.refresh = GarrisonOrderHallReportOptionsRefresh
-GarrisonOrderHallReportOptions.okay = GarrisonOrderHallReportOptionsOkay
-GarrisonOrderHallReportOptions.cancel = GarrisonOrderHallReportOptionsRefresh
-InterfaceOptions_AddCategory(GarrisonOrderHallReportOptions)
+function GarrisonOrderHallReport:SetButton(info, val)
+	GarrisonOrderHallReportButton = val
+end
+
+function GarrisonOrderHallReport:GetButton(info)
+	return GarrisonOrderHallReportButton
+end
+
+function GarrisonOrderHallReport:SetGarrison(info, val)
+	GarrisonOrderHallReportGarrison = val
+	self:SetButtonLook()
+end
+
+function GarrisonOrderHallReport:GetGarrison(info)
+	return GarrisonOrderHallReportGarrison
+end
