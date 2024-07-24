@@ -24,7 +24,7 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 		ToggleDropDownMenu(1, nil, GarrisonReportDropDown, self, 0, 0)
 	elseif button == "LeftButton" then
 		if GarrisonOrderHallReportGarrison == nil then
-			if UnitLevel("PLAYER") >= 60 then
+			if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) then
 				ToggleExpansionLandingPage()
 			else
 				GarrisonLandingPage_Toggle()
@@ -86,10 +86,13 @@ function GarrisonOrderHallReportFrameOnEvent(self, event, arg1)
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 	local show = false
-	local garrisons = { 2, 3, 9, 111 }
+	local garrisons = { 2, 3, 9 }
 	for i = 1, table.getn(garrisons) do
 		local available = not not (C_Garrison.GetGarrisonInfo(garrisons[i]))
 		show = available or show
+	end
+	if GarrisonOrderHallReportCovenant ~= nil and GarrisonOrderHallReportCovenant > 0 then
+		show = true
 	end
 	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9)
 	show = available or show
@@ -102,22 +105,27 @@ function GarrisonReportDropDownOnLoad()
 	local garrison = {}
 	garrison.text = "Garrison"
 	garrison.value = 2
+	garrison.notCheckable = 1
 	garrison.func = GarrisonReportDropDownOnClick
 	local order = {}
 	order.text = "Order Hall"
 	order.value = 3
+	order.notCheckable = 1
 	order.func = GarrisonReportDropDownOnClick
 	local missions = {}
 	missions.text = "Missions"
 	missions.value = 9
+	missions.notCheckable = 1
 	missions.func = GarrisonReportDropDownOnClick
 	local covenant = {}
 	covenant.text = "Covenant Sanctum"
 	covenant.value = 111
+	covenant.notCheckable = 1
 	covenant.func = GarrisonReportDropDownOnClick
 	local dragon = {}
 	dragon.text = "Dragon Isles"
 	dragon.value = "df"
+	dragon.notCheckable = 1
 	dragon.func = GarrisonReportDropDownOnClick
 	if not not (C_Garrison.GetGarrisonInfo(2)) then
 		UIDropDownMenu_AddButton(garrison)
