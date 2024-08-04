@@ -140,25 +140,18 @@ function GarrisonOrderHallReport:SetButtonLook()
 	ExpansionLandingPageMinimapButton.garrisonType = GarrisonOrderHallReportGarrison
 	self:ApplyAnchor(ExpansionLandingPageMinimapButton, GarrisonOrderHallReportGarrison)
 	if (GarrisonOrderHallReportGarrison == 2) then
-		ExpansionLandingPageMinimapButton.faction = UnitFactionGroup("player")
-		if ( ExpansionLandingPageMinimapButton.faction == "Horde" ) then
-			ExpansionLandingPageMinimapButton:GetNormalTexture():SetAtlas("GarrLanding-MinimapIcon-Horde-Up", true)
-			ExpansionLandingPageMinimapButton:GetPushedTexture():SetAtlas("GarrLanding-MinimapIcon-Horde-Down", true)
-		else
-			ExpansionLandingPageMinimapButton:GetNormalTexture():SetAtlas("GarrLanding-MinimapIcon-Alliance-Up", true)
-			ExpansionLandingPageMinimapButton:GetPushedTexture():SetAtlas("GarrLanding-MinimapIcon-Alliance-Down", true)
-		end
-		ExpansionLandingPageMinimapButton.title = GARRISON_LANDING_PAGE_TITLE
-		ExpansionLandingPageMinimapButton.description = MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP
+		local faction = UnitFactionGroup("player")
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:WoDAtlas(faction))
+		self.title = GARRISON_LANDING_PAGE_TITLE;
+		self.description = MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP;
 	elseif (GarrisonOrderHallReportGarrison == 3) then
 		local _, className = UnitClass("player");
-		ExpansionLandingPageMinimapButton:GetNormalTexture():SetAtlas("legionmission-landingbutton-"..className.."-up", true)
-		ExpansionLandingPageMinimapButton:GetPushedTexture():SetAtlas("legionmission-landingbutton-"..className.."-down", true)
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:LegionAtlas(className))
 		ExpansionLandingPageMinimapButton.title = ORDER_HALL_LANDING_PAGE_TITLE
 		ExpansionLandingPageMinimapButton.description = MINIMAP_ORDER_HALL_LANDING_PAGE_TOOLTIP
 	elseif (GarrisonOrderHallReportGarrison == 9) then
-		ExpansionLandingPageMinimapButton.faction = UnitFactionGroup("player")
-		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:BfaAtlas(ExpansionLandingPageMinimapButton.faction))
+		local faction = UnitFactionGroup("player")
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:BfaAtlas(faction))
 		ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_8_0_LANDING_PAGE_TITLE
 		ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_8_0_LANDING_PAGE_TOOLTIP
 	elseif (GarrisonOrderHallReportGarrison == 111) then
@@ -180,6 +173,29 @@ function GarrisonOrderHallReport:SetButtonLook()
 		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:TwwAtlas());
 		ExpansionLandingPageMinimapButton.title = WARIWTHIN_LANDING_PAGE_TITLE
 		ExpansionLandingPageMinimapButton.description = WARIWTHIN_LANDING_PAGE_TOOLTIP
+	end
+end
+
+function GarrisonOrderHallReport:WoDAtlas(faction)
+	if faction == "Horde" then
+		return "garrlanding-minimapIcon-horde-up", "garrLanding-minimapIcon-horde-down", "garrlanding-circleglow", "garrlanding-sidetoast-glow" 
+	else
+		return "garrlanding-minimapIcon-alliance-up", "garrLanding-minimapIcon-alliance-down", "garrlanding-circleglow", "garrlanding-sidetoast-glow"
+	end
+end
+
+local garrisonType7_0AtlasFormats = {"legionmission-landingbutton-%s-up",
+									 "legionmission-landingbutton-%s-down",
+									 "garrlanding-circleglow",
+									 "garrlanding-sidetoast-glow"};
+
+function GarrisonOrderHallReport:LegionAtlas(className)
+	if className == "EVOKER" then
+		local faction = UnitFactionGroup("player")
+		return self:WoDAtlas(faction)
+	else
+		local t = garrisonType7_0AtlasFormats
+		return t[1]:format(className), t[2]:format(className), t[3], t[4]
 	end
 end
 
