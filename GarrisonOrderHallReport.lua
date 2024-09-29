@@ -40,10 +40,12 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 					HideUIPanel(GarrisonLandingPage)
 				end
 				ToggleExpansionLandingPage()
-				ExpansionLandingPage.overlayFrame:Hide();
-				ExpansionLandingPage.overlay = GarrisonOrderHallReport.Overlays[GarrisonOrderHallReportGarrison]
-				ExpansionLandingPage.overlayFrame = ExpansionLandingPage.overlay.CreateOverlay(ExpansionLandingPage.Overlay);
-				ExpansionLandingPage.overlayFrame:Show();
+				if ExpansionLandingPage.overlayFrame ~= nil then
+					ExpansionLandingPage.overlayFrame:Hide();
+					ExpansionLandingPage.overlay = GarrisonOrderHallReport.Overlays[GarrisonOrderHallReportGarrison]
+					ExpansionLandingPage.overlayFrame = ExpansionLandingPage.overlay.CreateOverlay(ExpansionLandingPage.Overlay);
+					ExpansionLandingPage.overlayFrame:Show();
+				end
 			else
 				if ExpansionLandingPage ~= nil then
 					HideUIPanel(ExpansionLandingPage)
@@ -88,7 +90,7 @@ function GarrisonOrderHallReport:FrameOnEvent()
 	if GarrisonOrderHallReport.Covenant ~= nil and GarrisonOrderHallReport.Covenant > 0 then
 		show = true
 	end
-	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9)
+	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) or C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10)
 	show = available or show
 	if show then
 		ExpansionLandingPageMinimapButton:Show()
@@ -156,7 +158,7 @@ function GarrisonOrderHallReport:SetButtonLook()
 		ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_8_0_LANDING_PAGE_TOOLTIP
 	elseif (GarrisonOrderHallReportGarrison == 111) then
 		local covenantData = C_Covenants.GetCovenantData(C_Covenants.GetActiveCovenantID())
-		if covenantData then
+		if covenantData ~= nil then
 			self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:SlAtlas(covenantData));
 			ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_9_0_LANDING_PAGE_TITLE
 			ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_9_0_LANDING_PAGE_TOOLTIP
@@ -219,7 +221,9 @@ function GarrisonOrderHallReport:GetAnchor(garrisonType)
 end
 
 function GarrisonOrderHallReport:ApplyAnchor(self, garrisonType)
-	if garrisonType ~= nil then
+	if C_AddOns.IsAddOnLoaded("SexyMap") then
+		ExpansionLandingPageMinimapButton:SetSize(36, 36)
+	elseif garrisonType ~= nil then
 		local anchor = GarrisonOrderHallReport:GetAnchor(garrisonType);
 		local clearAllPoints = true
 		anchor:SetPoint(self, clearAllPoints)
