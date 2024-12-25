@@ -1,4 +1,4 @@
-## Interface: 110005
+## Interface: 110007
 ## Title: Garrison and Order Hall Report
 ## Notes: Allows you to see older Garrison Reports on Right or Middle Click.
 ## Author: Vampyr78

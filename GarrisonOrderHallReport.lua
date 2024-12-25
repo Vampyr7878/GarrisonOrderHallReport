@@ -95,7 +95,9 @@ function GarrisonOrderHallReport:FrameOnEvent()
 	if show then
 		ExpansionLandingPageMinimapButton:Show()
 	end
-	GarrisonOrderHallReport:SetButtonLook()
+	if GarrisonOrderHallReportGarrison ~= nil then
+		GarrisonOrderHallReport:SetButtonLook()
+	end
 end
 
 function GarrisonOrderHallReport:ContextMenu(parent)
@@ -320,8 +322,9 @@ function GarrisonOrderHallReport:OnInitialize()
 			garrison = {
 				name = "Report Type",
 				type = "select",
-				desc = "select report type that will be available as your default under left mouse button",
+				desc = "select report type that will be available as your default under left mouse button. Choosing Default option requires reload or changing area to load button look.",
 				values = {
+					[1] = "Default",
 					[2] = "Garrison",
 					[3] = "Order Hall",
 					[9] = "Missions",
@@ -348,10 +351,17 @@ function GarrisonOrderHallReport:GetButton(info)
 end
 
 function GarrisonOrderHallReport:SetGarrison(info, val)
-	GarrisonOrderHallReportGarrison = val
+	if val == 1 then
+		GarrisonOrderHallReportGarrison = nil
+	else
+		GarrisonOrderHallReportGarrison = val
+	end
 	self:SetButtonLook()
 end
 
 function GarrisonOrderHallReport:GetGarrison(info)
+	if GarrisonOrderHallReportGarrison == nil then
+		return 1
+	end
 	return GarrisonOrderHallReportGarrison
 end
