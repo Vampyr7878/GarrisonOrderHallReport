@@ -3,7 +3,6 @@ local GarrisonOrderHallReport = LibStub("AceAddon-3.0"):NewAddon("GarrisonOrderH
 GarrisonOrderHallReport.Buttons = {}
 GarrisonOrderHallReport.Garrisons = {}
 GarrisonOrderHallReport.Covenant = 0
-GarrisonOrderHallReport.Overlays = {}
 
 function GarrisonOrderHallReport:FixFrame()
 	if GarrisonLandingPage.garrTypeID == 111 then
@@ -26,7 +25,7 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 		GarrisonOrderHallReport:ContextMenu(self)
 	elseif button == "LeftButton" then
 		if GarrisonOrderHallReportGarrison == nil then
-			if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) or C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10) then
+			if GameRulesUtil.ShouldShowExpansionLandingPageButton() or GameRulesUtil.ShouldShowExpansionLandingPageButton() then
 				ExpansionLandingPage:RefreshExpansionOverlay()
 				ToggleExpansionLandingPage()
 			else
@@ -90,7 +89,7 @@ function GarrisonOrderHallReport:FrameOnEvent()
 	if GarrisonOrderHallReport.Covenant ~= nil and GarrisonOrderHallReport.Covenant > 0 then
 		show = true
 	end
-	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) or C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10)
+	local available = GameRulesUtil.ShouldShowExpansionLandingPageButton()
 	show = available or show
 	if show then
 		ExpansionLandingPageMinimapButton:Show()
@@ -114,12 +113,6 @@ function GarrisonOrderHallReport:ContextMenu(parent)
 		if self.Covenant ~= nil and self.Covenant > 0 then
 			root:CreateButton("Covenant Sanctum", function() self:ContextMenuClick(111) end)
 		end
-		if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) then
-			root:CreateButton("Dragon Isles", function() self:ContextMenuClick("df") end)
-		end
-		if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10) then
-			root:CreateButton("Khaz Algar", function() self:ContextMenuClick("tww") end)
-		end
 	end)
 end
 
@@ -131,12 +124,6 @@ function GarrisonOrderHallReport:ContextMenuClick(value)
 		ShowGarrisonLandingPage(value)
 		self:FixFrame()
 		self:SetupFollowerTab()
-	else
-		ToggleExpansionLandingPage()
-		ExpansionLandingPage.overlayFrame:Hide();
-		ExpansionLandingPage.overlay = self.Overlays[value]
-		ExpansionLandingPage.overlayFrame = ExpansionLandingPage.overlay.CreateOverlay(ExpansionLandingPage.Overlay);
-		ExpansionLandingPage.overlayFrame:Show();
 	end
 end
 
@@ -169,14 +156,6 @@ function GarrisonOrderHallReport:SetButtonLook()
 			ExpansionLandingPageMinimapButton.title = WARIWTHIN_LANDING_PAGE_TITLE
 			ExpansionLandingPageMinimapButton.description = WARIWTHIN_LANDING_PAGE_TOOLTIP
 		end
-	elseif (GarrisonOrderHallReportGarrison == "df") then
-		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:DfAtlas());
-		ExpansionLandingPageMinimapButton.title = DRAGONFLIGHT_LANDING_PAGE_TITLE
-		ExpansionLandingPageMinimapButton.description = DRAGONFLIGHT_LANDING_PAGE_TOOLTIP
-	elseif (GarrisonOrderHallReportGarrison == "tww") then
-		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:TwwAtlas());
-		ExpansionLandingPageMinimapButton.title = WARIWTHIN_LANDING_PAGE_TITLE
-		ExpansionLandingPageMinimapButton.description = WARIWTHIN_LANDING_PAGE_TOOLTIP
 	end
 end
 
@@ -213,9 +192,7 @@ end
 
 local garrisonTypeAnchors = {
 	["default"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", 5, -162),
-	[111] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150),
-	["df"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150),
-	["tww"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", 12, -152)
+	[111] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150)
 }
 
 function GarrisonOrderHallReport:GetAnchor(garrisonType)
@@ -243,14 +220,6 @@ function GarrisonOrderHallReport:SlAtlas(covenantData)
 		local t = garrisonType9_0AtlasFormats
 		return t[1]:format(kit), t[2]:format(kit), t[3]:format(kit), t[4]:format(kit)
 	end
-end
-
-function GarrisonOrderHallReport:DfAtlas()
-	return "dragonflight-landingbutton-up", "dragonflight-landingbutton-down", "dragonflight-landingbutton-circlehighlight", "dragonflight-landingbutton-circleglow", true
-end
-
-function GarrisonOrderHallReport:TwwAtlas()
-	return "warwithin-landingbutton-up", "warwithin-landingbutton-down", "warwithin-landingbutton-circlehighlight", "warwithin-landingbutton-circleglow", true
 end
 
 function GarrisonOrderHallReport:IconFromAtlas(self, up, down, highlight, glow, useDefaultButtonSize)
@@ -293,15 +262,11 @@ function GarrisonOrderHallReport:OnInitialize()
 		local available = not not (C_Garrison.GetGarrisonInfo(garrisons[i]))
 		show = available or show
 	end
-	local available = C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(9) or C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(10)
+	local available = GameRulesUtil.ShouldShowExpansionLandingPageButton()
 	show = available or show
 	if show then
 		ExpansionLandingPageMinimapButton:Show()
 	end
-	GarrisonOrderHallReport.Overlays = {
-		["df"] = CreateFromMixins(DragonflightLandingOverlayMixin),
-		["tww"] = CreateFromMixins(WarWithinLandingOverlayMixin)
-	}
 	local options = {
 		name = "Garrison Order Hall Report",
 		handler = GarrisonOrderHallReport,
@@ -328,9 +293,7 @@ function GarrisonOrderHallReport:OnInitialize()
 					[2] = "Garrison",
 					[3] = "Order Hall",
 					[9] = "Missions",
-					[111] = "Covenant Sanctum",
-					["df"] = "Dragon Isles",
-					["tww"] = "Khaz Algar",
+					[111] = "Covenant Sanctum"
 				},
 				set = "SetGarrison",
 				get = "GetGarrison",
