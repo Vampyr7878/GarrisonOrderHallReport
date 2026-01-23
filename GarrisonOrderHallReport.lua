@@ -25,14 +25,9 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 		GarrisonOrderHallReport:ContextMenu(self)
 	elseif button == "LeftButton" then
 		if GarrisonOrderHallReportGarrison == nil then
-			if GameRulesUtil.ShouldShowExpansionLandingPageButton() or GameRulesUtil.ShouldShowExpansionLandingPageButton() then
-				ExpansionLandingPage:RefreshExpansionOverlay()
-				ToggleExpansionLandingPage()
-			else
-				GarrisonLandingPage_Toggle()
-				GarrisonOrderHallReport:FixFrame()
-				GarrisonOrderHallReport:SetupFollowerTab()
-			end
+			GarrisonLandingPage_Toggle()
+			GarrisonOrderHallReport:FixFrame()
+			GarrisonOrderHallReport:SetupFollowerTab()
 		else
 			if not tonumber(GarrisonOrderHallReportGarrison) then
 				if GarrisonLandingPage ~= nil then
