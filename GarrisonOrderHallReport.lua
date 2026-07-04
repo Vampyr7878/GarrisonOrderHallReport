@@ -25,21 +25,20 @@ ExpansionLandingPageMinimapButton:SetScript("OnClick", function(self, button, do
 		GarrisonOrderHallReport:ContextMenu(self)
 	elseif button == "LeftButton" then
 		if GarrisonOrderHallReportGarrison == nil then
-			GarrisonLandingPage_Toggle()
-			GarrisonOrderHallReport:FixFrame()
-			GarrisonOrderHallReport:SetupFollowerTab()
+			if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(11) then
+				ExpansionLandingPage:RefreshExpansionOverlay()
+				ToggleExpansionLandingPage()
+			else
+				GarrisonLandingPage_Toggle()
+				GarrisonOrderHallReport:FixFrame()
+				GarrisonOrderHallReport:SetupFollowerTab()
+			end
 		else
 			if not tonumber(GarrisonOrderHallReportGarrison) then
 				if GarrisonLandingPage ~= nil then
 					HideUIPanel(GarrisonLandingPage)
 				end
 				ToggleExpansionLandingPage()
-				if ExpansionLandingPage.overlayFrame ~= nil then
-					ExpansionLandingPage.overlayFrame:Hide();
-					ExpansionLandingPage.overlay = GarrisonOrderHallReport.Overlays[GarrisonOrderHallReportGarrison]
-					ExpansionLandingPage.overlayFrame = ExpansionLandingPage.overlay.CreateOverlay(ExpansionLandingPage.Overlay);
-					ExpansionLandingPage.overlayFrame:Show();
-				end
 			else
 				if ExpansionLandingPage ~= nil then
 					HideUIPanel(ExpansionLandingPage)
@@ -108,6 +107,9 @@ function GarrisonOrderHallReport:ContextMenu(parent)
 		if self.Covenant ~= nil and self.Covenant > 0 then
 			root:CreateButton("Covenant Sanctum", function() self:ContextMenuClick(111) end)
 		end
+		if C_PlayerInfo.IsExpansionLandingPageUnlockedForPlayer(11) then
+			root:CreateButton("Omnium Folio", function() self:ContextMenuClick("of") end)
+		end
 	end)
 end
 
@@ -119,6 +121,8 @@ function GarrisonOrderHallReport:ContextMenuClick(value)
 		ShowGarrisonLandingPage(value)
 		self:FixFrame()
 		self:SetupFollowerTab()
+	else
+		ToggleExpansionLandingPage()
 	end
 end
 
@@ -147,10 +151,14 @@ function GarrisonOrderHallReport:SetButtonLook()
 			ExpansionLandingPageMinimapButton.title = GARRISON_TYPE_9_0_LANDING_PAGE_TITLE
 			ExpansionLandingPageMinimapButton.description = GARRISON_TYPE_9_0_LANDING_PAGE_TOOLTIP
 		else
-			self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:TwwAtlas());
-			ExpansionLandingPageMinimapButton.title = WARIWTHIN_LANDING_PAGE_TITLE
-			ExpansionLandingPageMinimapButton.description = WARIWTHIN_LANDING_PAGE_TOOLTIP
+			self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:MidnightAtlas());
+			ExpansionLandingPageMinimapButton.title = MIDNIGHT_LANDING_PAGE_TITLE
+			ExpansionLandingPageMinimapButton.description = MIDNIGHT_LANDING_PAGE_TOOLTIP
 		end
+	elseif (GarrisonOrderHallReportGarrison == "of") then
+		self:IconFromAtlas(ExpansionLandingPageMinimapButton, self:MidnightAtlas());
+		ExpansionLandingPageMinimapButton.title = MIDNIGHT_LANDING_PAGE_TITLE
+		ExpansionLandingPageMinimapButton.description = MIDNIGHT_LANDING_PAGE_TOOLTIP
 	end
 end
 
@@ -187,7 +195,8 @@ end
 
 local garrisonTypeAnchors = {
 	["default"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", 5, -162),
-	[111] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150)
+	[111] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", -3, -150),
+	["of"] = AnchorUtil.CreateAnchor("TOPLEFT", "MinimapBackdrop", "TOPLEFT", 12, -152)
 }
 
 function GarrisonOrderHallReport:GetAnchor(garrisonType)
@@ -215,6 +224,10 @@ function GarrisonOrderHallReport:SlAtlas(covenantData)
 		local t = garrisonType9_0AtlasFormats
 		return t[1]:format(kit), t[2]:format(kit), t[3]:format(kit), t[4]:format(kit)
 	end
+end
+
+function GarrisonOrderHallReport:MidnightAtlas()
+	return "midnight-landingbutton-up", "midnight-landingbutton-down", "midnight-landingbutton-circlehighlight", "midnight-landingbutton-circleglow", true
 end
 
 function GarrisonOrderHallReport:IconFromAtlas(self, up, down, highlight, glow, useDefaultButtonSize)
@@ -262,6 +275,9 @@ function GarrisonOrderHallReport:OnInitialize()
 	if show then
 		ExpansionLandingPageMinimapButton:Show()
 	end
+	--if GarrisonOrderHallReportGarrison ~= nil then
+		--GarrisonOrderHallReport:SetButtonLook()
+	--end
 	local options = {
 		name = "Garrison Order Hall Report",
 		handler = GarrisonOrderHallReport,
@@ -288,7 +304,8 @@ function GarrisonOrderHallReport:OnInitialize()
 					[2] = "Garrison",
 					[3] = "Order Hall",
 					[9] = "Missions",
-					[111] = "Covenant Sanctum"
+					[111] = "Covenant Sanctum",
+					["of"] = "Omnium Folio"
 				},
 				set = "SetGarrison",
 				get = "GetGarrison",
